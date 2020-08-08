@@ -10,6 +10,8 @@ abstract class Application
     protected $session;
     protected $db_manager;
 
+    protected $login_action = array();    // ログイン画面の指定
+
     public function __construct($debug = false)
     {
         $this->setDebugMode($debug);
@@ -106,7 +108,11 @@ abstract class Application
             
         } catch (HttpNotFoundException $e) {
             $this->render404Page($e);
+        } catch (UnauthorizedActionException $e) {
+            list($controller, $action) = $this->login_action;   // ログイン画面のコントローラ名とアクション名を設定
+            $this->runAction($controller, $action);             // ログイン画面を実行させる
         }
+        
         $this->response->send();
     }
 
@@ -120,8 +126,10 @@ abstract class Application
             throw new HttpNotFoundException($controller_class . ' controller is not found.');
         }
 
+        // Controllerクラスのrunメソッドを実行　HTMLコンテンツを取得
         $content = $controller->run($action, $params);
 
+        // HTMLをContentにセット
         $this->response->setContent($content);
     }
 
